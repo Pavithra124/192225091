@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Average Calculator Microservice</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef2f5;
+      padding: 40px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #1e3a8a;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #1e3a8a;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3749c1;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    pre {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Average Calculator Microservice</h1>
+    <label for="type">Choose number type:</label>
+    <select id="type">
+      <option value="p">Prime</option>
+      <option value="P">Fibonacci</option>
+      <option value="e">Even</option>
+      <option value="r">Random</option>
+    </select>
+    <button onclick="fetchAndCalculate()">Fetch & Calculate Average</button>
+
+    <div class="results">
+      <h3>Result:</h3>
+      <pre id="output">Click the button to see results here...</pre>
+    </div>
+  </div>
+
+  <script>
+    const windowSize = 10;
+    let numberWindow = [];
+
+    async function fetchNumber(type) {
+      const url = `https://testserver.com/api/numbers/${type}`;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 500);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error("Failed to fetch");
+
+        const data = await response.json();
+        return data.numbers || [];
+      } catch (error) {
+        console.warn("Fetch error or timeout:", error);
+        return [];
+      }
+    }
+
+    function calculateAverage(numbers) {
+      const sum = numbers.reduce((acc, val) => acc + val, 0);
+      return numbers.length ? (sum / numbers.length).toFixed(2) : 0;
+    }
+
+    async function fetchAndCalculate() {
+      const type = document.getElementById("type").value;
+      const prevState = [...numberWindow];
+
+      const fetched = await fetchNumber(type);
+      const uniqueFetched = fetched.filter(num => !numberWindow.includes(num));
+
+      for (const num of uniqueFetched) {
+        if (numberWindow.length >= windowSize) {
+          numberWindow.shift();
+        }
+        numberWindow.push(num);
+      }
+
+      const average = calculateAverage(numberWindow);
+      const result = {
+        windowPrevState: prevState,
+        windowCurrState: numberWindow,
+        numbers: numberWindow,
+        average: parseFloat(average)
+      };
+
+      document.getElementById("output").textContent = JSON.stringify(result, null, 2);
+    }
+  </script>
+</body>
+</html>
+    
+
+
+
+    
+
+
+
